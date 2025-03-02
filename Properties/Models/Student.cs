@@ -5,5 +5,5 @@ public class Student
     public string Email { get; set; }
     public DateTime DateOfBirth { get; set; }
 
-    public ICollection<StudentCourse> StudentCourses { get; set; }
+    public ICollection<StudentCourse>? StudentCourses { get; set; }
 }

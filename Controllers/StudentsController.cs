@@ -31,6 +31,7 @@ public class StudentsController : ControllerBase
     }
 
 
+
 [HttpGet("filter/{studentId}")]
 public async Task<ActionResult<object>> GetFilteredStudentData(int studentId)
 {
@@ -42,14 +43,19 @@ public async Task<ActionResult<object>> GetFilteredStudentData(int studentId)
 
     if (studentX == null) return NotFound("Student not found.");
 
+
     var relatedStudents = await _context.Students
-        .Where(s => s.StudentCourses
+        .Where(s => s.Id != studentX.Id && s.StudentCourses
             .Any(sc => studentX.StudentCourses
                 .Select(xc => xc.CourseId)
-                .Contains(sc.CourseId))) 
+                .Contains(sc.CourseId)))
         .Include(s => s.StudentCourses)
         .ThenInclude(sc => sc.Course)
         .ToListAsync();
+
+
+    var studentY = relatedStudents.FirstOrDefault();
+    if (studentY == null) return NotFound("No related students found.");
 
     return Ok(new
     {
@@ -60,23 +66,28 @@ public async Task<ActionResult<object>> GetFilteredStudentData(int studentId)
             Courses = studentX.StudentCourses.Select(sc => new 
             {
                 sc.Course.Id,
-                sc.Course.Title
+              //  sc.Course.Title
             })
         },
-        RelatedStudents = relatedStudents.Select(sy => new
+        StudentY = new
         {
-            sy.Id,
-            sy.Name,
-            SharedCourses = sy.StudentCourses
-                .Where(sc => studentX.StudentCourses
-                    .Select(xc => xc.CourseId)
-                    .Contains(sc.CourseId)) 
-                .Select(sc => new 
-                {
-                    sc.Course.Id,
-                    sc.Course.Title
-                })
-        })
+            studentY.Id,
+            studentY.Name,
+            Courses = studentY.StudentCourses.Select(sc => new
+            {
+                sc.Course.Id,
+               // sc.Course.Title
+            })
+        },
+        SharedCourses = studentX.StudentCourses
+            .Where(sc => studentY.StudentCourses
+                .Select(yc => yc.CourseId)
+                .Contains(sc.CourseId))
+            .Select(sc => new
+            {
+                sc.Course.Id,
+              //  sc.Course.Title
+            })
     });
 }
 
@@ -112,4 +123,8 @@ public async Task<ActionResult<object>> GetFilteredStudentData(int studentId)
         await _context.SaveChangesAsync();
         return NoContent();
     }
+
+
+
+
 }
